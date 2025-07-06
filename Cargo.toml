@@ -1,0 +1,13 @@
+[package]
+name = "cargo-depcription"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Serialization
+## Deserialize toml manifests
+toml_edit = { version = "0.22.27", features = ["serde"] }
+
+# Output
+## Transform dependencies to markdown table
+to_markdown_table = "0.1.5"
