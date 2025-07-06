@@ -37,7 +37,7 @@ fn main() {
 
     let manifest_path = match manifest_path_arg {
         Some(path) => path,
-        _ => PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml"),
+        _ => env::current_dir().unwrap().join("Cargo.toml"),
     };
 
     let manifest_str = fs::read_to_string(manifest_path).expect("Could not read the Cargo.toml file");

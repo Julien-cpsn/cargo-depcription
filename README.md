@@ -2,6 +2,14 @@
 
 Transforms your rust project dependencies into an explicative dependency choice markdown table!
 
+## Installation
+
+Simply
+
+```shell
+cargo install depcription
+```
+
 ## Usage
 
 In current directory
