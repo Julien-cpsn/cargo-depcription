@@ -69,4 +69,4 @@ Cargo depcription
 
 ## License
 
-The MIT license for this project can be seen here
+The MIT license for this project can be seen [here](https://github.com/Julien-cpsn/cargo-depcription/blob/main/LICENSE)
