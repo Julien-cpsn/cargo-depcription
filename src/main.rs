@@ -7,10 +7,21 @@ use toml_edit::{DocumentMut, Item, Table, Value};
 fn main() {
     let args: Vec<String> = env::args().into_iter().collect();
 
+    let mut manifest_path_arg: Option<PathBuf> = None;
     let mut skip_uncommented = false;
 
     for arg in &args[1..] {
         if !arg.starts_with("-") && !arg.starts_with("--") {
+            let path = PathBuf::from(&arg);
+
+            if path.exists() && path.is_file() {
+                if manifest_path_arg.is_some() {
+                    panic!("Multiple paths specified");
+                }
+                else {
+                    manifest_path_arg = Some(path);
+                }
+            }
             continue;
         }
 
@@ -24,8 +35,8 @@ fn main() {
         }
     }
 
-    let manifest_path = match args.get(1) {
-        Some(path) if !path.starts_with("-") => PathBuf::from(path),
+    let manifest_path = match manifest_path_arg {
+        Some(path) => path,
         _ => PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml"),
     };
 
