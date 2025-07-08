@@ -4,6 +4,13 @@ use std::process::exit;
 use to_markdown_table::{MarkdownTable, TableRow};
 use toml_edit::{DocumentMut, Item, Table, Value};
 
+const HELP: &str = r#"Cargo depcription
+> Transforms your rust project dependencies into an explicative dependency choice markdown table!
+
+    --skip-uncommented  Do not print the dependencies that are not commented
+    --help              Display this help and exit
+"#;
+
 fn main() {
     let args: Vec<String> = env::args().into_iter().collect();
 
@@ -28,7 +35,7 @@ fn main() {
         match arg.as_str() {
             "--skip-uncommented" => skip_uncommented = true,
             "-h" | "--help" => {
-                println!("Cargo depcription\n\n\t--skip-uncommented\tDo not print the dependencies that are not commented");
+                print!("{HELP}");
                 exit(0);
             },
             _ => panic!("Unknown argument: {}", arg)
@@ -104,7 +111,7 @@ fn dependencies_to_md_table(dependencies: &Table, skip_uncommented: bool) {
             for line in lines {
                 if line.starts_with("# ") {
                     section_row = Some(TableRow::new(vec![
-                        format!("**{}**", &line[2..]),
+                        format!("**{}**", line[2..].trim()),
                         String::new(),
                         String::new()]
                     ));
@@ -112,9 +119,12 @@ fn dependencies_to_md_table(dependencies: &Table, skip_uncommented: bool) {
                 }
                 else {
                     let line = line.replace("#", "");
-                    reason = match reason {
-                        None => Some(line),
-                        Some(reason) => Some(format!("{}\n{}", reason, &line.replace("#", "")))
+
+                    if !line.starts_with("!") {
+                        reason = match reason {
+                            None => Some(line.trim().to_string()),
+                            Some(reason) => Some(format!("{} {}", reason, line.replace("#", "").trim()))
+                        }
                     }
                 }
             }

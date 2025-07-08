@@ -49,7 +49,7 @@ tui-big-text = "=0.7.1"
 Output:
 ```markdown
 | **Category / Library** | **Version** | **Reason**                                                                              |
-|------------------------| ----------- | --------------------------------------------------------------------------------------- |
+|------------------------|-------------|-----------------------------------------------------------------------------------------|
 | **Request**            |             |                                                                                         |
 | reqwest                |  0.12.20    |  Send requests                                                                          |
 | **TUI**                |             |                                                                                         |
@@ -62,18 +62,22 @@ Output:
 
 ```shell
 Cargo depcription
+> Transforms your rust project dependencies into an explicative dependency choice markdown table!
 
-        --skip-uncommented      Do not print the dependencies that are not commented
+    --skip-uncommented  Do not print the dependencies that are not commented
+    --help              Display this help and exit
+
+
 ```
 
 ## Dependencies
 
-| **Category / Library** | **Version** | **Reason**                                |
-|------------------------|-------------|-------------------------------------------|
-| **Serialization**      |             |                                           |
-| toml_edit              |  0.22.27    |  Deserialize toml manifests               |
-| **Output**             |             |                                           |
-| to_markdown_table      |  0.1.5      |  Transform dependencies to markdown table |
+| **Category / Library** | **Version** | **Reason**                               |
+|------------------------|-------------|------------------------------------------|
+| **Serialization**      |             |                                          |
+| toml_edit              |  0.23.0     | Deserialize toml manifests               |
+| **Output**             |             |                                          |
+| to_markdown_table      |  0.1.5      | Transform dependencies to markdown table |
 
 ## License
 
