@@ -2,7 +2,7 @@
 name = "cargo-depcription"
 description = "Transforms your rust project dependencies into an explicative dependency choice markdown table!"
 authors = ["julien-cpsn"]
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 license = "MIT"
 homepage = "https://github.com/Julien-cpsn/cargo-depcription"
