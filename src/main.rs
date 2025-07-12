@@ -1,162 +1,76 @@
+mod args;
+mod parse_manifest;
+
+use crate::args::{Args, Column};
+use clap::Parser;
+use once_cell::sync::Lazy;
 use std::{env, fs};
-use std::path::PathBuf;
-use std::process::exit;
 use to_markdown_table::{MarkdownTable, TableRow};
-use toml_edit::{DocumentMut, Item, Table, Value};
+use toml_edit::{DocumentMut, Item};
+use crate::parse_manifest::parse_dependency;
 
-const HELP: &str = r#"Cargo depcription
-> Transforms your rust project dependencies into an explicative dependency choice markdown table!
+pub const ARGS: Lazy<Args> = Lazy::new(|| Args::parse());
 
-    --skip-uncommented  Do not print the dependencies that are not commented
-    --help              Display this help and exit
-"#;
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let manifest_path = match &ARGS.manifest_path {
+        Some(path) => path.clone(),
+        _ => env::current_dir()?.join("Cargo.toml"),
+    };
 
-fn main() {
-    let args: Vec<String> = env::args().into_iter().collect();
-
-    let mut manifest_path_arg: Option<PathBuf> = None;
-    let mut skip_uncommented = false;
-
-    for arg in &args[1..] {
-        if !arg.starts_with("-") && !arg.starts_with("--") {
-            let path = PathBuf::from(&arg);
-
-            if path.exists() && path.is_file() {
-                if manifest_path_arg.is_some() {
-                    panic!("Multiple paths specified");
-                }
-                else {
-                    manifest_path_arg = Some(path);
-                }
-            }
-            continue;
-        }
-
-        match arg.as_str() {
-            "--skip-uncommented" => skip_uncommented = true,
-            "-h" | "--help" => {
-                print!("{HELP}");
-                exit(0);
-            },
-            _ => panic!("Unknown argument: {}", arg)
-        }
-    }
-
-    let manifest_path = match manifest_path_arg {
-        Some(path) => path,
-        _ => env::current_dir().unwrap().join("Cargo.toml"),
+    let columns = match &ARGS.column {
+        Some(columns) => columns.clone(),
+        None => vec![
+            Column::Name,
+            Column::Version,
+            Column::Comment
+        ]
     };
 
     let manifest_str = fs::read_to_string(manifest_path).expect("Could not read the Cargo.toml file");
 
-    let doc: DocumentMut = manifest_str.parse().unwrap();
+    let doc: DocumentMut = manifest_str.parse()?;
 
-    match doc.get("dependencies") {
+    let dependencies_table = match doc.get("dependencies") {
         None => panic!("No dependencies section"),
         Some(dependencies) => match dependencies {
             Item::None => panic!("Dependencies section has \"None\" type"),
             Item::Value(_) => panic!("Dependencies section has \"Value\" type"),
             Item::ArrayOfTables(_) => panic!("Dependencies section has \"ArrayOfTable\" type"),
-            Item::Table(dependencies_table) => dependencies_to_md_table(dependencies_table, skip_uncommented),
+            Item::Table(dependencies_table) => dependencies_table,
         }
     };
-}
 
-fn dependencies_to_md_table(dependencies: &Table, skip_uncommented: bool) {
     let mut markdown_dependencies: Vec<TableRow> = vec![];
 
-    for (keys, dependency) in dependencies.get_values() {
-        let key = keys.first().unwrap();
-        let name = key.to_string();
+    for (keys, dependency) in dependencies_table.get_values() {
+        let rows = parse_dependency(keys, dependency, &columns).await?;
 
-        let mut version = match dependency {
-            Value::InlineTable(dependency_table) => match dependency_table.get("version") {
-                None => panic!("Dependency {name} has no \"version\" value"),
-                Some(version_value) => match version_value {
-                    Value::String(version) => version.to_string(),
-                    _ => panic!("Dependency {name} version is not \"String\" type"),
-                }
-            },
-            Value::String(version_value) => version_value.to_string(),
-            _ => panic!("Dependency {name} value is not \"InlineTable\" type"),
-        };
+        let table_rows: Vec<TableRow> = rows
+            .iter()
+            .map(|row| TableRow::new(row.to_owned()))
+            .collect();
 
-        version = version
-            .replace("\"", "")
-            .replace("=", "")
-            .replace("~", "");
-
-        let decors = match (key.leaf_decor().prefix(), key.leaf_decor().suffix()) {
-            (None, None) => None,
-            (Some(prefix), None) => Some(prefix.as_str().unwrap().trim().to_string()),
-            (None, Some(suffix)) => Some(suffix.as_str().unwrap().trim().to_string()),
-            (Some(prefix), Some(suffix)) => {
-                let prefix = prefix.as_str().unwrap().trim();
-                let suffix = suffix.as_str().unwrap().trim();
-
-                match (prefix.is_empty(), suffix.is_empty()) {
-                    (true, true) => None,
-                    (true, false) => Some(suffix.to_string()),
-                    (false, true) => Some(prefix.to_string()),
-                    (false, false) => Some(format!("{}\n{}", prefix, prefix))
-                }
-            }
-        };
-
-        let mut section_row: Option<TableRow> = None;
-        let mut reason: Option<String> = None;
-        if let Some(decors) = decors {
-            let lines = decors.lines();
-
-            for line in lines {
-                if line.starts_with("# ") {
-                    section_row = Some(TableRow::new(vec![
-                        format!("**{}**", line[2..].trim()),
-                        String::new(),
-                        String::new()]
-                    ));
-                    continue;
-                }
-                else {
-                    let line = line.replace("#", "");
-
-                    if !line.starts_with("!") {
-                        reason = match reason {
-                            None => Some(line.trim().to_string()),
-                            Some(reason) => Some(format!("{} {}", reason, line.replace("#", "").trim()))
-                        }
-                    }
-                }
-            }
-        }
-
-        if reason.is_none() {
-            if skip_uncommented {
-                continue;
-            }
-        }
-
-        let reason = reason.unwrap_or_else(String::new).replace("\n", "");
-
-        if let Some(section_row) = section_row {
-            markdown_dependencies.push(section_row);
-        }
-
-        markdown_dependencies.push(TableRow::new(vec![
-            name,
-            version,
-            reason
-        ]));
+        markdown_dependencies.extend(table_rows);
     }
 
+    let headers = columns
+        .iter()
+        .enumerate()
+        .map(|(index, column)| {
+            if index == 0 {
+                format!("**Category / {column}**")
+            }
+            else {
+                format!("**{column}**")
+            }
+        })
+        .collect::<Vec<String>>();
+
     let table = MarkdownTable::new(
-        Some(vec![
-            String::from("**Category / Library**"),
-            String::from("**Version**"),
-            String::from("**Reason**")
-        ]),
+        Some(headers),
         markdown_dependencies
-    ).unwrap();
+    )?;
 
     let stringed_table = table
         .to_string()
@@ -165,4 +79,6 @@ fn dependencies_to_md_table(dependencies: &Table, skip_uncommented: bool) {
         .replace("- |", "--|");
 
     println!("{stringed_table}");
+
+    Ok(())
 }
