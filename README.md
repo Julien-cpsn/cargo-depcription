@@ -21,7 +21,7 @@ cargo depcription
 With path
 
 ```shell
-cargo depcription ~/Path/to/my/Cargo.toml
+cargo depcription --manifest-path ~/Path/to/my/Cargo.toml
 ```
 
 ## Custom columns

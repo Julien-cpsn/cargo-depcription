@@ -6,6 +6,7 @@ use clap::{Parser, ValueEnum};
 #[derive(Parser)]
 pub struct Args {
     /// Cargo manifest to use, leave empty for current directory manifest
+    #[clap(short, long)]
     pub manifest_path: Option<PathBuf>,
 
     /// Do not print the dependencies that are not commented
