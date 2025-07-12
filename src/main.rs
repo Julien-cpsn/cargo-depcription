@@ -1,24 +1,27 @@
 mod args;
 mod parse_manifest;
 
-use crate::args::{Args, Column};
+use crate::args::{Args, Column, Depcription};
 use clap::Parser;
 use once_cell::sync::Lazy;
 use std::{env, fs};
+use std::borrow::ToOwned;
+use std::clone::Clone;
 use to_markdown_table::{MarkdownTable, TableRow};
 use toml_edit::{DocumentMut, Item};
 use crate::parse_manifest::parse_dependency;
 
 pub const ARGS: Lazy<Args> = Lazy::new(|| Args::parse());
+pub const COMMAND: Lazy<Depcription> = Lazy::new(|| (*ARGS.command.as_depcription()).clone());
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let manifest_path = match &ARGS.manifest_path {
+    let manifest_path = match &COMMAND.manifest_path {
         Some(path) => path.clone(),
         _ => env::current_dir()?.join("Cargo.toml"),
     };
 
-    let columns = match &ARGS.column {
+    let columns = match &COMMAND.column {
         Some(columns) => columns.clone(),
         None => vec![
             Column::Name,
