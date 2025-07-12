@@ -2,7 +2,7 @@
 name = "cargo-depcription"
 description = "Transforms your rust project dependencies into an explicative dependency choice markdown table!"
 authors = ["julien-cpsn"]
-version = "0.2.3"
+version = "0.2.4"
 edition = "2024"
 license = "MIT"
 homepage = "https://github.com/Julien-cpsn/cargo-depcription"
@@ -26,6 +26,7 @@ to_markdown_table = "0.1.5"
 anyhow = "1.0.98"
 ## CLI parser
 clap = { version = "4.5.41", features = ["derive"] }
+clap-cargo = "0.16.0"
 ## Allow async function usage
 tokio = { version = "1.46.1", features = ["rt", "rt-multi-thread", "macros"] }
 ## Lazy variables

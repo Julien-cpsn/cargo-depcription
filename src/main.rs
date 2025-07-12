@@ -1,7 +1,7 @@
 mod args;
 mod parse_manifest;
 
-use crate::args::{Args, Column};
+use crate::args::{CargoCli, Column, Depcription};
 use clap::Parser;
 use once_cell::sync::Lazy;
 use std::{env, fs};
@@ -11,7 +11,7 @@ use to_markdown_table::{MarkdownTable, TableRow};
 use toml_edit::{DocumentMut, Item};
 use crate::parse_manifest::parse_dependency;
 
-pub const ARGS: Lazy<Args> = Lazy::new(|| Args::parse());
+pub const ARGS: Lazy<Depcription> = Lazy::new(|| (*CargoCli::parse().as_depcription()).clone());
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
