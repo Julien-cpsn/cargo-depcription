@@ -1,28 +1,12 @@
+use clap::ArgAction;
+use clap::{Parser, ValueEnum};
 use std::fmt::Display;
 use std::path::PathBuf;
-use clap::{ArgAction, Subcommand};
-use clap::{Parser, ValueEnum};
 
 #[derive(Parser)]
 pub struct Args {
-    #[command(subcommand)]
-    pub command: Command,
-}
+    package: Option<String>,
 
-#[derive(Subcommand)]
-pub enum Command {
-    /// Transforms your rust project dependencies into an explicative dependency choice markdown table!
-    Depcription(Depcription)
-}
-
-impl Command {
-    pub fn as_depcription(&self) -> &Depcription {
-        match self { Command::Depcription(depcription) => depcription }
-    }
-}
-
-#[derive(clap::Args, Clone)]
-pub struct Depcription {
     /// Cargo manifest to use, leave empty for current directory manifest
     #[clap(short, long)]
     pub manifest_path: Option<PathBuf>,

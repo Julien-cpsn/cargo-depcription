@@ -1,7 +1,7 @@
 use crate::args::Column;
-use crate::COMMAND;
 use crates_io_metadata::scrap::scrap;
 use toml_edit::{Key, Value};
+use crate::ARGS;
 
 pub async fn parse_dependency(keys: Vec<&Key>, dependency: &Value, columns: &Vec<Column>) -> anyhow::Result<Vec<Vec<String>>> {
     let mut rows = vec![];
@@ -35,7 +35,7 @@ pub async fn parse_dependency(keys: Vec<&Key>, dependency: &Value, columns: &Vec
         rows.push(section_row);
     }
 
-    if comment.is_none() && COMMAND.skip_uncommented {
+    if comment.is_none() && ARGS.skip_uncommented {
         return Ok(rows);
     }
 
